@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <!-- Blob background -->
+  <ellipse cx="420" cy="200" rx="200" ry="150" fill="#D9E6FF" opacity="0.8"/>
+  <path d="M 400 50 Q 550 80 550 200 Q 520 320 400 350 Q 280 340 250 220 Q 280 80 400 50 Z" fill="#D9E6FF"/>
+  
+  <!-- Track -->
+  <path d="M 80 280 Q 200 250 350 220 Q 500 200 520 180" stroke="#33325C" stroke-width="6" fill="none" opacity="0.6" stroke-dasharray="12 8"/>
+  <path d="M 90 290 Q 210 260 360 230 Q 510 210 530 190" stroke="#33325C" stroke-width="4" fill="none" opacity="0.4" stroke-dasharray="8 6"/>
+  
+  <!-- Platform -->
+  <rect x="150" y="240" width="60" height="8" rx="2" fill="#B6C4F8" opacity="0.7"/>
+  <rect x="155" y="220" width="4" height="20" fill="#33325C"/>
+  
+  <!-- Signal post -->
+  <line x1="180" y1="210" x2="180" y2="230" stroke="#33325C" stroke-width="3"/>
+  <circle cx="180" cy="205" r="6" fill="#FB7B1B" opacity="0.8"/>
+  
+  <!-- Train (isometric locomotive + coaches) -->
+  <g opacity="0.9">
+    <!-- Coach 2 -->
+    <polygon points="200,200 240,185 280,200 240,215" fill="#FFFFFF" stroke="#33325C" stroke-width="2"/>
+    <rect x="215" y="195" width="6" height="4" rx="1" fill="#B6C4F8"/>
+    <rect x="225" y="193" width="6" height="4" rx="1" fill="#B6C4F8"/>
+    <line x1="210" y1="200" x2="270" y2="200" stroke="#33325C" stroke-width="1"/>
+    
+    <!-- Coach 1 -->
+    <polygon points="170,210 210,195 250,210 210,225" fill="#FFFFFF" stroke="#33325C" stroke-width="2"/>
+    <rect x="185" y="205" width="6" height="4" rx="1" fill="#B6C4F8"/>
+    <rect x="195" y="203" width="6" height="4" rx="1" fill="#B6C4F8"/>
+    <line x1="180" y1="210" x2="240" y2="210" stroke="#33325C" stroke-width="1"/>
+    
+    <!-- Locomotive -->
+    <polygon points="140,220 190,205 230,220 190,235" fill="#FFFFFF" stroke="#33325C" stroke-width="2"/>
+    <rect x="155" y="215" width="8" height="5" rx="1" fill="#6E7FE6" opacity="0.6"/>
+    <rect x="167" y="213" width="8" height="5" rx="1" fill="#B6C4F8"/>
+    <polygon points="185,210 195,208 200,215 190,217" fill="#FB7B1B" opacity="0.7"/>
+    <line x1="150" y1="220" x2="220" y2="220" stroke="#33325C" stroke-width="1"/>
+  </g>
+  
+  <!-- Person -->
+  <circle cx="320" cy="260" r="8" fill="#B6C4F8"/>
+  <rect x="316" y="268" width="8" height="12" rx="4" fill="#B6C4F8"/>
+  <line x1="320" y1="275" x2="330" y2="285" stroke="#33325C" stroke-width="2"/>
+  <rect x="325" y="255" width="12" height="8" rx="2" fill="#33325C" opacity="0.8"/>
+  
+  <!-- Floating card -->
+  <g transform="translate(380, 120) rotate(-5)">
+    <rect x="0" y="0" width="100" height="40" rx="12" fill="#FFFFFF" opacity="0.95" stroke="#D9E6FF" stroke-width="1"/>
+    <text x="12" y="16" font-family="Inter, sans-serif" font-size="8" fill="#8A8B94">ETA Delay</text>
+    <text x="12" y="30" font-family="Montserrat, sans-serif" font-size="14" font-weight="600" fill="#FB7B1B">+42 min</text>
+    <!-- pointer -->
+    <polygon points="20,40 25,48 30,40" fill="#FFFFFF"/>
+  </g>
+</svg>
