@@ -9,7 +9,7 @@ import csv
 import json
 import random
 import xml.etree.ElementTree as ET
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 STATIONS = [
@@ -89,6 +89,7 @@ def generate_stations() -> list:
 
 def generate_trains(stations: list) -> list:
     codes = [s["station_code"] for s in stations]
+    zone_by_code = {s["station_code"]: s["zone"] for s in stations}
     trains = []
     for idx, (train_no, train_name, train_type, source, dest) in enumerate(TRAIN_DEFS, start=1):
         src = source if source in codes else codes[0]
@@ -100,7 +101,7 @@ def generate_trains(stations: list) -> list:
                 "train_type": train_type,
                 "source_station_code": src,
                 "destination_station_code": dst,
-                "zone": "NR",
+                "zone": zone_by_code.get(src, "NR"),
                 "distance_km": 1400.0 + idx * 37.5,
             }
         )
@@ -133,11 +134,8 @@ def generate_routes(trains: list, stations: list) -> dict:
 
 
 def _add_minutes(ts: str, minutes: float) -> str:
-    day = date.fromisoformat(ts.split(" ")[0])
-    hh = int(ts.split(" ")[1].split(":")[0])
-    mm = int(ts.split(" ")[1].split(":")[1])
-    total = hh * 60 + mm + minutes
-    return f"{day.isoformat()} {total // 60 % 24:02d}:{int(total % 60):02d}"
+    dt = datetime.fromisoformat(ts.strip())
+    return (dt + timedelta(minutes=minutes)).strftime("%Y-%m-%d %H:%M")
 
 
 def generate_delay_records(trains, routes, stations, start_year=2023, end_year=2025, seed=42):
