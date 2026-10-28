@@ -1,0 +1,37 @@
+db:
+  type: sqlite
+  url: "sqlite:///data/railway.db"
+
+paths:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  output_dir: "outputs"
+  charts_dir: "outputs/charts"
+  reports_dir: "outputs/reports"
+  excel_dir: "outputs/excel"
+  db_path: "data/railway.db"
+  cleaned_excel: "outputs/excel/railway_cleaned_data.xlsx"
+
+data_generation:
+  seed: 42
+  start_year: 2023
+  end_year: 2025
+  n_trains: 40
+  n_stations: 60
+
+file_names:
+  trains: "trains.csv"
+  stations: "stations.json"
+  routes: "routes.xml"
+  delay_records: "delay_records.csv"
+  delay_remarks: "delay_remarks.txt"
+  manual_delay_log: "manual_delay_log.csv"
+
+cleaning:
+  missing_delay_strategy: "train_median_or_drop"
+  weather_default: "Unknown"
+  delay_cap_minutes: 3000
+
+forecast:
+  steps: 3
+  holdout_months: 6
