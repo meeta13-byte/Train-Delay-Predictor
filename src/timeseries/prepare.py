@@ -29,5 +29,5 @@ def monthly_series_from_df(df: pd.DataFrame) -> pd.Series:
     monthly = monthly_series(tmp)
     monthly["month"] = pd.to_datetime(monthly["month"])
     series = monthly.set_index("month")["avg_delay"]
-    series.index = pd.to_datetime(series.index)
+    series.index = pd.DatetimeIndex(pd.to_datetime(series.index), freq="ME")
     return series

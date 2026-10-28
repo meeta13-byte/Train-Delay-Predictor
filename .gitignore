@@ -7,7 +7,15 @@ venv/
 data/raw/
 data/processed/
 data/railway.db
-outputs/
+# generated outputs; UI screenshots are kept for the report / README
+outputs/*
+!outputs/ui_screenshots/
 notebooks/.ipynb_checkpoints/
 .pytest_cache/
 *.egg-info/
+
+# web app
+node_modules/
+client/dist/
+npm-debug.log*
+.DS_Store

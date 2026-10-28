@@ -138,6 +138,11 @@ def clean_delay_records(df: pd.DataFrame, cap_minutes: float = 3000.0) -> pd.Dat
 
     out = add_features(out)
     after = len(out)
+    out.attrs["cleaning_stats"] = {
+        "rows_before": int(before), "rows_after": int(after), "invalid_dropped": n_invalid,
+        "missing_imputed": imputed, "duplicates_removed": n_dups, "outliers_dropped": n_impossible,
+        "outlier_cap_minutes": cap,
+    }
     logger.info("Cleaning delay_records: before=%d after=%d invalid_dropped=%d imputed=%d duplicates_removed=%d impossible_dropped=%d",
                 before, after, n_invalid, imputed, n_dups, n_impossible)
     return out
@@ -173,6 +178,8 @@ def run_cleaning(data: dict):
     from src.cleaning.cleaning_report import build_cleaning_report
 
     report = build_cleaning_report(before_counts, after_counts)
+    report["delay_records_stats"] = dict(cleaned["delay_records"].attrs.get("cleaning_stats", {}))
+    report["remarks_unparsed"] = list(data.get("delay_remarks_unparsed", []))
     remarks = cleaned.get("delay_remarks")
     if remarks is not None and len(remarks) > 0:
         train_nos = set(cleaned.get("trains", pd.DataFrame())["train_no"].dropna().astype(int).tolist())

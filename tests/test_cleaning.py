@@ -34,3 +34,17 @@ def test_features_added():
     dr = cleaned["delay_records"]
     for col in ["year", "month", "season", "delay_category", "is_weekend"]:
         assert col in dr.columns
+
+
+def test_cleaned_excel_has_headers(tmp_path):
+    import pandas as pd
+    from src.cleaning.cleaning_report import write_cleaned_excel
+
+    data, report = run_cleaning(load_all())
+    small = {k: (v.head(50) if hasattr(v, "head") else v) for k, v in data.items()}
+    path = tmp_path / "cleaned.xlsx"
+    write_cleaned_excel(small, report, path)
+    sheets = pd.read_excel(path, sheet_name=None)
+    assert list(sheets["trains"].columns) == list(data["trains"].columns)
+    assert pd.api.types.is_numeric_dtype(sheets["delay_records"]["delay_minutes"])
+    assert "Cleaning_Report" in sheets

@@ -12,8 +12,11 @@ from statsmodels.tsa.stattools import adfuller
 
 def adf_test(series):
     """Run ADF test; return dict with interpretation."""
-    result = adfuller(series.dropna())
-    stat, pvalue, lags, nobs, crit, _ = result
+    try:
+        result = adfuller(series.dropna(), result_object=False)
+    except TypeError:  # statsmodels < 0.15 has no result_object argument
+        result = adfuller(series.dropna())
+    stat, pvalue, lags, nobs, crit = result[:5]
     return {
         "test_statistic": stat,
         "p_value": pvalue,

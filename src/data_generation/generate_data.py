@@ -327,8 +327,11 @@ GENERATOR_VERSION = "2"
 def write_raw_data(raw_dir: Path, regenerate: bool = False) -> list:
     raw_dir = Path(raw_dir)
     version_file = raw_dir / ".generator_version"
-    up_to_date = version_file.exists() and version_file.read_text().strip() == GENERATOR_VERSION
-    if raw_dir.exists() and up_to_date and not regenerate:
+    has_files = raw_dir.exists() and any(p.is_file() and not p.name.startswith(".") for p in raw_dir.iterdir())
+    # Files without the marker are the user's own data: never overwrite them unless asked.
+    # Files with an old marker came from an older version of this generator: rebuild them.
+    stale = version_file.exists() and version_file.read_text().strip() != GENERATOR_VERSION
+    if has_files and not stale and not regenerate:
         return sorted(p for p in raw_dir.glob("*") if p.is_file() and not p.name.startswith("."))
 
     raw_dir.mkdir(parents=True, exist_ok=True)

@@ -38,7 +38,8 @@ def load_all(raw_dir=None) -> dict:
         "routes": read_routes_xml(raw_dir / "routes.xml"),
         "delay_records": read_delay_records_csv(raw_dir / "delay_records.csv"),
     }
-    remarks_df, remarks_unparsed = read_delay_remarks(raw_dir / "delay_remarks.txt")
+    station_codes = data["stations"]["station_code"].astype(str).str.upper().tolist()
+    remarks_df, remarks_unparsed = read_delay_remarks(raw_dir / "delay_remarks.txt", station_codes=station_codes)
     data["delay_remarks"] = remarks_df
     data["delay_remarks_unparsed"] = remarks_unparsed
     return data

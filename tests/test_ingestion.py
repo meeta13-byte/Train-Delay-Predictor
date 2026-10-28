@@ -49,3 +49,23 @@ def test_parse_remark_line():
 def test_load_all():
     data = load_all()
     assert set(["trains", "stations", "routes", "delay_records", "delay_remarks"]).issubset(data.keys())
+
+
+def test_early_remark_is_negative_delay():
+    parsed = parse_remark_line("12002 departed 18 mins early due to scheduling correction")
+    assert parsed["delay_minutes"] == -18
+
+
+def test_generator_keeps_user_data(tmp_path):
+    from src.data_generation.generate_data import write_raw_data
+
+    raw = tmp_path / "raw"
+    write_raw_data(raw)  # empty folder -> generate
+    assert (raw / ".generator_version").exists()
+    (raw / ".generator_version").unlink()
+    (raw / "trains.csv").write_text("user data")
+    write_raw_data(raw)  # no marker -> user's own files, keep them
+    assert (raw / "trains.csv").read_text() == "user data"
+    (raw / ".generator_version").write_text("1")
+    write_raw_data(raw)  # old marker -> rebuild
+    assert (raw / "trains.csv").read_text() != "user data"

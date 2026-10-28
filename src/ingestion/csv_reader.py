@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 
 def _report(source: str, df: pd.DataFrame) -> None:
-    logger.info("CSV source=%s shape=%s columns=%s", source, list(df.columns), df.shape)
+    logger.info("CSV source=%s shape=%s columns=%s", source, df.shape, list(df.columns))
     logger.info("CSV head:\n%s", df.head().to_string())
 
 
@@ -30,6 +30,6 @@ def read_delay_records_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Delay records CSV not found: {path}")
     df = pd.read_csv(path)
-    df["cancelled"] = df["cancelled"].astype(bool)
+    df["cancelled"] = df["cancelled"].map(lambda v: str(v).strip().lower() in ("true", "1", "yes"))
     _report(str(path), df)
     return df

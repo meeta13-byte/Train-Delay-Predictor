@@ -46,6 +46,9 @@ def parse_remark_line(line: str, station_codes=None) -> "dict":
         if not codes or token in codes:
             station_code = token
 
+    if delay_min is not None and re.search(r"\bearly\b", line, re.I):
+        delay_min = -delay_min
+
     reason_m = _REASON_RE.search(line)
     reason = reason_m.group(1).lower() if reason_m else "unknown"
 

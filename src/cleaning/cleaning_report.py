@@ -24,23 +24,36 @@ def build_cleaning_report(before_counts: dict, after_counts: dict, notes=None) -
     }
 
 
+def _excel_rows(df: pd.DataFrame) -> list:
+    """Rows of native Python values (None for missing), converted column-wise for speed."""
+    cols = []
+    for c in df.columns:
+        col = df[c]
+        if pd.api.types.is_datetime64_any_dtype(col):
+            vals = [None if pd.isna(v) else v.to_pydatetime() for v in col]
+        else:
+            vals = col.astype(object).where(col.notna(), None).tolist()
+        cols.append(vals)
+    return [list(r) for r in zip(*cols)]
+
+
 def write_cleaned_excel(data: dict, report: dict, path) -> None:
-    """Write one Excel workbook: cleaned tables (one sheet each) + Cleaning_Report sheet."""
+    """Write one Excel workbook: cleaned tables (one sheet each, with headers) + Cleaning_Report sheet."""
     from openpyxl import Workbook
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    wb = Workbook()
-    wb.remove(wb.active)
+    wb = Workbook(write_only=True)
 
     for table in CLEANED_TABLE_ORDER:
         if table not in data or data[table] is None:
             continue
         ws = wb.create_sheet(title=table[:31])
         df = data[table]
-        for i, row in enumerate(df.itertuples(index=False, name=None)):
-            ws.append([str(v) if v is not None else "" for v in row])
-        logger.info("Excel sheet %s rows=%d", table, i + 1)
+        ws.append([str(c) for c in df.columns])
+        for row in _excel_rows(df):
+            ws.append(row)
+        logger.info("Excel sheet %s rows=%d", table, len(df))
 
     ws = wb.create_sheet(title="Cleaning_Report")
     ws.append(["table", "before_count", "after_count"])

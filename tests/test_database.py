@@ -39,3 +39,12 @@ def test_sql_queries_return_dataframes():
     df = queries.top_delayed_trains(engine)
     assert isinstance(df, pd.DataFrame)
     assert len(df) > 0
+
+
+def test_monthly_series_with_filters():
+    engine = get_engine("sqlite")
+    all_months = queries.monthly_series_with_filters(engine)
+    by_type = queries.monthly_series_with_filters(engine, train_type="Passenger")
+    by_train = queries.monthly_series_with_filters(engine, train_no=12002)
+    assert len(all_months) == len(by_type) == len(by_train) == 36
+    assert by_type["avg_delay"].mean() > by_train["avg_delay"].mean()  # passenger trains run later than Shatabdi

@@ -1,0 +1,19 @@
+{
+  "name": "railpulse-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Express API for RailPulse. Talks to the Python backend through src/bridge.py.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch-path=. index.js",
+    "start": "node index.js",
+    "test": "node --test test/app.test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}

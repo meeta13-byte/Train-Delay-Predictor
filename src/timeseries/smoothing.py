@@ -12,11 +12,12 @@ def moving_averages(series):
 def simple_exp_smooth(series, alpha: float = 0.2):
     from statsmodels.tsa.api import SimpleExpSmoothing
 
-    model = SimpleExpSmoothing(series).fit(smoothing_level=alpha, optimized=False)
+    model = SimpleExpSmoothing(series, initialization_method="estimated").fit(smoothing_level=alpha, optimized=False)
     return model
 
 
 def holt_winters(series, period: int = 12):
     """Holt-Winters additive trend + seasonality."""
-    model = ExponentialSmoothing(series, trend="add", seasonal="add", seasonal_periods=period).fit()
+    model = ExponentialSmoothing(series, trend="add", seasonal="add", seasonal_periods=period,
+                                 initialization_method="estimated").fit()
     return model

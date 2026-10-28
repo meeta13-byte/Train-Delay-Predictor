@@ -77,6 +77,7 @@ def run_pipeline(args):
     if not args.skip_charts:
         logger.info("=== Phase 6: Visualizations ===")
         delays = cleaned["delay_records"]
+        delays = delays[~delays["cancelled"]]  # cancelled runs carry a placeholder 0 delay
         routes = cleaned.get("routes")
         static_charts.plot_monthly_avg_delay(query_results["monthly_avg_delay"])
         static_charts.plot_delay_histogram(delays["delay_minutes"])
@@ -95,13 +96,13 @@ def run_pipeline(args):
             static_charts.plot_donut_delay_reasons(query_results["common_delay_reasons"])
         month_year = delays.groupby(["month", "year"])["delay_minutes"].mean().reset_index(name="avg_delay")
         static_charts.plot_heatmap_month_year(month_year)
-        corr = delays[["delay_minutes", "month", "year"]].copy()
-        corr["stop_sequence"] = delays_with_train.get("stop_sequence", 0)
+        merged = delays.merge(routes[["train_no", "station_code", "stop_sequence", "distance_from_source_km"]],
+                              on=["train_no", "station_code"], how="left")
+        corr = merged[["delay_minutes", "month", "year", "stop_sequence", "distance_from_source_km"]]
         static_charts.plot_correlation_heatmap(corr)
-        if routes is not None and "distance_from_source_km" in routes.columns:
-            merged = delays.merge(routes[["train_no", "station_code", "distance_from_source_km"]], on=["train_no", "station_code"], how="left")
-            static_charts.plot_scatter_distance_vs_delay(merged)
-        acc = queries.delay_accumulation_by_stop(engine, train_no=int(delays["train_no"].iloc[0]))
+        static_charts.plot_scatter_distance_vs_delay(merged)
+        worst_train = int(query_results["top_delayed_trains"].iloc[0]["train_no"])
+        acc = queries.delay_accumulation_by_stop(engine, train_no=worst_train)
         static_charts.plot_delay_accumulation(acc)
 
     logger.info("=== Phase 7: Time series + ARIMA forecast ===")
@@ -133,6 +134,7 @@ def run_pipeline(args):
     logger.info("Worst station: %s avg=%.2f", worst["station_name"] if worst is not None else None, worst["avg_delay"] if worst is not None else 0)
     logger.info("On-time %%: %.2f", query_results["ontime_performance"]["ontime_pct"].mean())
     logger.info("Fog/Winter avg: %s", query_results["avg_delay_by_season"].to_string())
+    engine.dispose()
 
 
 def main():

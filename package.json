@@ -2,13 +2,22 @@
   "name": "train-delay-predictor",
   "private": true,
   "version": "1.0.0",
+  "description": "RailPulse: Indian Railways train delay analysis, journey planner and forecasting (Python backend + Express + React).",
   "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix client install",
+    "setup": "npm install && npm run setup:python && python3 main.py --regenerate",
+    "setup:python": "python3 -m pip install -r requirements.txt",
+    "pipeline": "python3 main.py",
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm run server\" \"npm run client\"",
+    "build": "npm --prefix client run build",
+    "start": "npm run build && npm --prefix server start",
+    "test": "python3 -m pytest -q && npm --prefix server test",
+    "screenshots": "node tools/screenshots.mjs",
     "push": "./auto-push.sh"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.0"
   }
 }

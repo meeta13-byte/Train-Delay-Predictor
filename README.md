@@ -29,115 +29,140 @@ This project is an academic Data Analytics & Visualization (DAV) mini-project th
 
 ## Tech Stack
 
-- Python 3.9+
-- pandas, numpy
-- matplotlib, seaborn, plotly
-- statsmodels
-- SQLAlchemy, sqlite3
-- openpyxl
-- lxml/xml.etree.ElementTree
-- scikit-learn
-- pytest
-- PyYAML
+**Backend / analytics:** Python 3.9+, pandas, numpy, matplotlib, seaborn, statsmodels, SQLAlchemy + SQLite,
+openpyxl, xml.etree.ElementTree, scikit-learn, PyYAML, pytest.
+
+**Web app:** Node.js 20.11+, Express (API), React + Vite (UI), Plotly.js (charts and map), Mermaid (ER diagram).
 
 ## Folder Structure
 
 ```
-railway-delay-analytics/
+Train-Delay-Predictor/
 ├── README.md
+├── package.json            # npm scripts: setup, dev, start, test, screenshots
 ├── requirements.txt
 ├── config.yaml
-├── main.py
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── railway.db
-├── outputs/
-│   ├── charts/
-│   ├── reports/
-│   └── excel/
-├── notebooks/
-│   └── railway_delay_analysis.ipynb
+├── main.py                 # runs the whole analytics pipeline
+├── data/                   # generated: raw/, processed/, railway.db
+├── outputs/                # generated: charts/, reports/, excel/ (+ ui_screenshots/, kept in git)
 ├── src/
 │   ├── config.py
-│   ├── api.py
+│   ├── api.py              # functions used by the UI (JSON-ready)
+│   ├── bridge.py           # long-running worker the Express server talks to
+│   ├── planner.py          # journey planner: delay prediction + better-train suggestions
 │   ├── data_generation/generate_data.py
-│   ├── ingestion/ (csv_reader, json_reader, xml_reader, txt_reader, loader)
-│   ├── cleaning/ (cleaner, cleaning_report)
-│   ├── database/ (schema, db_loader, queries)
-│   ├── visualization/ (static_charts, interactive_charts)
-│   ├── timeseries/ (prepare, decomposition, smoothing, arima_model)
+│   ├── ingestion/          # csv_reader, json_reader, xml_reader, txt_reader, loader
+│   ├── cleaning/           # cleaner, cleaning_report
+│   ├── database/           # schema, db_loader, queries
+│   ├── visualization/      # static_charts, interactive_charts
+│   ├── timeseries/         # prepare, decomposition, smoothing, arima_model
 │   └── utils/logger.py
-├── tests/
-└── app/ (UI to be added later)
+├── server/                 # Express API (app.js, python.js bridge client, pipeline.js)
+├── client/                 # React + Vite UI (pages/, components/, theme.js, styles.css, assets/)
+├── tools/
+│   ├── make_svgs.py        # draws the isometric illustrations and icons
+│   └── screenshots.mjs     # screenshots every page with Playwright
+└── tests/                  # pytest (backend + API helpers); server/test for the API routes
 ```
 
 ## Setup and Run
 
+You need **Python 3.9+** and **Node.js 20.11+**.
+
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# one-time setup: npm packages, Python packages, and the first pipeline run (~1 min)
+npm run setup
 
-# Run full pipeline
-python main.py
-
-# Regenerate synthetic data
-python main.py --regenerate
-
-# Skip chart generation
-python main.py --skip-charts
-
-# Use different DB type (configure URL in config.yaml)
-python main.py --db mysql  # or postgresql
+# start the web app (API on :8000, UI on :5173) and open http://localhost:5173
+npm run dev
 ```
+
+`npm run setup` is the same as:
+
+```bash
+npm install                        # also installs server/ and client/
+python3 -m pip install -r requirements.txt
+python3 main.py --regenerate       # generate → clean → load DB → charts → forecast
+```
+
+Other commands:
+
+```bash
+npm start                 # production: builds the UI and serves everything on http://localhost:8000
+npm test                  # pytest + Express route tests
+npm run pipeline          # re-run python main.py (also possible from the Data Pipeline page)
+python3 main.py --regenerate   # rebuild the synthetic raw data too
+python3 main.py --skip-charts  # skip the Matplotlib charts
+```
+
+The server finds Python automatically (`$PYTHON`, then `.venv/` or `venv/`, then `python3` / `python`).
+If you use a virtual environment, create it as `.venv` in the project folder, or start with
+`PYTHON=/path/to/python npm run dev`. On Windows, use `python` instead of `python3` in the commands above.
+
+## Web App
+
+Pages (the top navigation):
+
+| Page | What it shows |
+|---|---|
+| **Home** | Hero, key insights (most delayed train, winter fog impact, on-time %), how the pipeline works |
+| **Plan journey** | Enter a train number or category, From / To, date and an optional "leave after" time. Predicts the delay and suggests better trains on the same route |
+| **Dashboard** | Filters (date range, zone, train type, season) shared by the analysis pages; KPI tiles, monthly trend, delay by type, category share, month × year heatmap |
+| **Delays** | Histogram, box plots by season and type, weather, distance vs delay, category share per type, delay reasons from text, and a train explorer (delay along the route) |
+| **Stations** | Map of stations sized and coloured by delay (works offline without the street map), worst 10, full table |
+| **Forecast** | ARIMA(1,1,1) 3-month forecast with 95% band for all trains / a zone / a train type / one train; MAE and RMSE on a 6-month holdout; decomposition, moving averages, exponential smoothing, ADF + ACF/PACF; CSV download |
+| **Data Pipeline** | For the viva: raw file previews, cleaning counts, ER diagram + cardinality + orphan check, database tables, SQL playground (preset queries or your own read-only `SELECT`), downloads, and a "Re-run pipeline" button with progress |
+| **Lab Outputs** | Gallery of the saved Matplotlib / Seaborn charts, labelled by lab; click to enlarge |
+| **About** | Problem statement, objectives, tech stack, lab-to-module mapping, future scope |
+
+Screenshots of every page are in [`outputs/ui_screenshots/`](outputs/ui_screenshots/) (regenerate with
+`npm run screenshots` while `npm run dev` is running; needs `npm i -D playwright && npx playwright install chromium`).
+
+![Home](outputs/ui_screenshots/home-1440.png)
 
 ## Journey Planner
 
-Open the dashboard and go to **Plan Journey**:
+The **Plan journey** page (logic in `src/planner.py`):
 
-```bash
-pip install streamlit
-streamlit run app/Home.py
-```
+- predicts the train's delay at your destination from its history at that station for the same month,
+  adjusted for the day of the week, with the likely range, on-time chance and cancellation rate;
+- ranks every train that serves the same From → To on **expected arrival** (timetable + predicted delay);
+- suggests better options in plain language: *"leave later, arrive earlier"*, *"same arrival, more time at
+  home"*, *"usually runs late but still gets there first"*, or *"arrives earlier"* (only trains leaving at most
+  2 hours before yours).
 
-Enter a train number (or just a category such as Superfast / Passenger), the
-From and To stations, the date, and optionally the earliest time you can leave.
-The planner (`src/planner.py`):
+Example: 12951 Mumbai Nagpur Express (Mail/Express, 18:40) to Nagpur → 12105 Vidarbha Express leaves 25 min
+later but is expected about 2 hours earlier.
 
-- predicts the train's delay at your destination from its history at that
-  station for the same month, adjusted for day of the week, and shows the likely
-  range, on-time chance and cancellation rate;
-- ranks every train that serves the same From → To on **expected arrival**
-  (timetable + predicted delay);
-- suggests better options in plain language, e.g. *"leave later, arrive
-  earlier"*, *"same arrival, more time at home"*, or *"usually runs late but
-  still gets there first"*.
-
-The same logic is available from Python: `src.api.plan_journey(...)`.
+![Journey planner](outputs/ui_screenshots/plan-1440.png)
 
 ## How to Switch to MySQL/PostgreSQL
 
-1. Install driver: `pip install pymysql` (MySQL) or `psycopg2-binary` (PostgreSQL)
-2. Update `config.yaml`:
+1. Install a driver: `pip install pymysql` (MySQL) or `pip install psycopg2-binary` (PostgreSQL).
+2. Put the connection URL in `config.yaml`:
 ```yaml
 db:
-  type: mysql  # or postgresql
   url: "mysql+pymysql://user:password@host:port/dbname"
+  # or: "postgresql+psycopg2://user:password@host:port/dbname"
 ```
-Or:
-```yaml
-db:
-  type: postgresql
-  url: "postgresql+psycopg2://user:password@host:port/dbname"
-```
+3. Run `python3 main.py --db mysql` (or `--db postgresql`).
+
+The web app reads the SQLite database (`data/railway.db`), so keep running the default pipeline as well.
 
 ## How to Plug in Real Data
 
-- Place files in `data/raw/` with the expected names from `config.yaml`:
-  - `trains.csv`, `stations.json`, `routes.xml`, `delay_records.csv`, `delay_remarks.txt`
-- For manual logs: add `data/raw/manual_delay_log.csv` with columns `date, train_no, station_code, delay_minutes`
-- The loaders are flexible and will read your files if they exist
-- Update column mappings in `config.yaml` if needed
+Put your files in `data/raw/` with these names and columns (see `src/ingestion/` for the exact format):
+
+- `trains.csv`: train_no, train_name, train_type, source_station_code, destination_station_code, zone, distance_km
+- `stations.json`: list of {station_code, station_name, state, zone, latitude, longitude}
+- `routes.xml`: `<train train_no>` with `<stop stop_sequence>` children (station_code, scheduled_arrival,
+  scheduled_departure, day, distance_from_source_km)
+- `delay_records.csv`: record_id, date, train_no, station_code, scheduled_arrival, actual_arrival, delay_minutes,
+  weather_condition, cancelled
+- `delay_remarks.txt`: free-text remarks, one per line
+
+Delete the synthetic files and the `.generator_version` marker in `data/raw/` first, then copy yours in and run
+`python3 main.py` (not `--regenerate`, which would overwrite them). Files without the marker are never overwritten.
 
 ## Lab Mapping
 
@@ -163,7 +188,9 @@ db:
 ## Running Tests
 
 ```bash
-pytest -v
+npm test          # or separately:
+python3 -m pytest -q
+npm --prefix server test
 ```
 
 ## Future Scope
@@ -171,7 +198,7 @@ pytest -v
 - Real-time NTES data integration (with official permission)
 - Weather API integration (IMD/OpenWeather)
 - Machine-learning delay prediction models
-- UI dashboard (Streamlit) - see `app/README.md`
+- Journeys with a change of train
 
 ## Data Note
 
