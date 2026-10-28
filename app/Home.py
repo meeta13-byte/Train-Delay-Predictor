@@ -2,7 +2,7 @@ import streamlit as st
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from app.components.layout import page_container, navbar, footer

@@ -3,14 +3,14 @@ from pathlib import Path
 
 
 def inject_css():
-    css_path = Path(__file__).parent / "styles.css"
+    css_path = Path(__file__).parent.parent / "styles.css"
     if css_path.exists():
         css = css_path.read_text()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 def navbar(active="home"):
-    logo_path = Path(__file__).parent / "assets" / "logo.svg"
+    logo_path = Path(__file__).parent.parent / "assets" / "logo.svg"
     logo_svg = logo_path.read_text() if logo_path.exists() else ""
     nav_html = f"""
     <div class="navbar">
@@ -20,6 +20,7 @@ def navbar(active="home"):
         </div>
         <div class="navbar-links">
             <a href="/" class="navbar-link">Home</a>
+            <a href="/Journey_Planner" class="navbar-link">Plan Journey</a>
             <a href="/Dashboard" class="navbar-link">Dashboard</a>
             <a href="/Delay_Analysis" class="navbar-link">Delays</a>
             <a href="/Stations" class="navbar-link">Stations</a>

@@ -15,6 +15,7 @@ COLUMNS = [
     "station_code",
     "scheduled_arrival",
     "scheduled_departure",
+    "day",
     "distance_from_source_km",
 ]
 
@@ -38,6 +39,7 @@ def read_routes_xml(path: Path) -> pd.DataFrame:
                     "station_code": stop.findtext("station_code", "").strip(),
                     "scheduled_arrival": stop.findtext("scheduled_arrival", "").strip(),
                     "scheduled_departure": stop.findtext("scheduled_departure", "").strip(),
+                    "day": int(stop.findtext("day") or 1),
                     "distance_from_source_km": float(stop.findtext("distance_from_source_km") or 0),
                 }
             )

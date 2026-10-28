@@ -74,35 +74,35 @@ def run_pipeline(args):
         df.to_csv(path, index=False)
         logger.info("Saved query %s -> %s", name, path)
 
-        if not args.skip_charts:
-            logger.info("=== Phase 6: Visualizations ===")
-            delays = cleaned["delay_records"]
-            routes = cleaned.get("routes")
-            static_charts.plot_monthly_avg_delay(query_results["monthly_avg_delay"])
-            static_charts.plot_delay_histogram(delays["delay_minutes"])
-            delays_with_train = delays.merge(cleaned["trains"][["train_no", "train_type", "zone"]], on="train_no", how="left")
-            if "train_type" in delays_with_train.columns:
-                static_charts.plot_delay_histogram_kde_by_train_type(delays_with_train)
-                static_charts.plot_delay_by_train_type(delays_with_train)
-                static_charts.plot_stacked_bar_delay_categories(delays_with_train)
-            static_charts.plot_delay_by_season(delays)
-            static_charts.plot_top_delayed_trains(query_results["top_delayed_trains"])
-            static_charts.plot_worst_stations(query_results["worst_stations"])
-            zone_year = delays_with_train.groupby(["zone", "year"])["delay_minutes"].mean().reset_index(name="avg_delay")
-            static_charts.plot_avg_delay_by_zone_per_year(zone_year)
-            static_charts.plot_pie_delay_categories(delays)
-            if not query_results["common_delay_reasons"].empty:
-                static_charts.plot_donut_delay_reasons(query_results["common_delay_reasons"])
-            month_year = delays.groupby(["month", "year"])["delay_minutes"].mean().reset_index(name="avg_delay")
-            static_charts.plot_heatmap_month_year(month_year)
-            corr = delays[["delay_minutes", "month", "year"]].copy()
-            corr["stop_sequence"] = delays_with_train.get("stop_sequence", 0)
-            static_charts.plot_correlation_heatmap(corr)
-            if routes is not None and "distance_from_source_km" in routes.columns:
-                merged = delays.merge(routes[["train_no", "station_code", "distance_from_source_km"]], on=["train_no", "station_code"], how="left")
-                static_charts.plot_scatter_distance_vs_delay(merged)
-            acc = queries.delay_accumulation_by_stop(engine, train_no=int(delays["train_no"].iloc[0]))
-            static_charts.plot_delay_accumulation(acc)
+    if not args.skip_charts:
+        logger.info("=== Phase 6: Visualizations ===")
+        delays = cleaned["delay_records"]
+        routes = cleaned.get("routes")
+        static_charts.plot_monthly_avg_delay(query_results["monthly_avg_delay"])
+        static_charts.plot_delay_histogram(delays["delay_minutes"])
+        delays_with_train = delays.merge(cleaned["trains"][["train_no", "train_type", "zone"]], on="train_no", how="left")
+        if "train_type" in delays_with_train.columns:
+            static_charts.plot_delay_histogram_kde_by_train_type(delays_with_train)
+            static_charts.plot_delay_by_train_type(delays_with_train)
+            static_charts.plot_stacked_bar_delay_categories(delays_with_train)
+        static_charts.plot_delay_by_season(delays)
+        static_charts.plot_top_delayed_trains(query_results["top_delayed_trains"])
+        static_charts.plot_worst_stations(query_results["worst_stations"])
+        zone_year = delays_with_train.groupby(["zone", "year"])["delay_minutes"].mean().reset_index(name="avg_delay")
+        static_charts.plot_avg_delay_by_zone_per_year(zone_year)
+        static_charts.plot_pie_delay_categories(delays)
+        if not query_results["common_delay_reasons"].empty:
+            static_charts.plot_donut_delay_reasons(query_results["common_delay_reasons"])
+        month_year = delays.groupby(["month", "year"])["delay_minutes"].mean().reset_index(name="avg_delay")
+        static_charts.plot_heatmap_month_year(month_year)
+        corr = delays[["delay_minutes", "month", "year"]].copy()
+        corr["stop_sequence"] = delays_with_train.get("stop_sequence", 0)
+        static_charts.plot_correlation_heatmap(corr)
+        if routes is not None and "distance_from_source_km" in routes.columns:
+            merged = delays.merge(routes[["train_no", "station_code", "distance_from_source_km"]], on=["train_no", "station_code"], how="left")
+            static_charts.plot_scatter_distance_vs_delay(merged)
+        acc = queries.delay_accumulation_by_stop(engine, train_no=int(delays["train_no"].iloc[0]))
+        static_charts.plot_delay_accumulation(acc)
 
     logger.info("=== Phase 7: Time series + ARIMA forecast ===")
     series = prepare.monthly_series_from_df(query_results["monthly_avg_delay"])

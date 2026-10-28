@@ -29,7 +29,7 @@ def plot_delay_category_donut(df):
 
 def plot_month_year_heatmap(df):
     pivot = df.pivot(index="month", columns="year", values="avg_delay")
-    fig = go.Figure(data=go.Heatmap(z=pivot.values, x=pivot.columns, y=pivot.index, colorscale="Blues"))
+    fig = go.Figure(data=go.Heatmap(z=pivot.values, x=[str(c) for c in pivot.columns], y=pivot.index, colorscale="Blues"))
     fig.update_layout(title="Month × Year Average Delay")
     apply_theme(fig)
     return fig

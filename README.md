@@ -91,6 +91,30 @@ python main.py --skip-charts
 python main.py --db mysql  # or postgresql
 ```
 
+## Journey Planner
+
+Open the dashboard and go to **Plan Journey**:
+
+```bash
+pip install streamlit
+streamlit run app/Home.py
+```
+
+Enter a train number (or just a category such as Superfast / Passenger), the
+From and To stations, the date, and optionally the earliest time you can leave.
+The planner (`src/planner.py`):
+
+- predicts the train's delay at your destination from its history at that
+  station for the same month, adjusted for day of the week, and shows the likely
+  range, on-time chance and cancellation rate;
+- ranks every train that serves the same From → To on **expected arrival**
+  (timetable + predicted delay);
+- suggests better options in plain language, e.g. *"leave later, arrive
+  earlier"*, *"same arrival, more time at home"*, or *"usually runs late but
+  still gets there first"*.
+
+The same logic is available from Python: `src.api.plan_journey(...)`.
+
 ## How to Switch to MySQL/PostgreSQL
 
 1. Install driver: `pip install pymysql` (MySQL) or `psycopg2-binary` (PostgreSQL)

@@ -2,7 +2,7 @@ import streamlit as st
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.components.layout import page_container, navbar, footer
 from app.components.cards import kpi_tile, battery_meter
@@ -46,23 +46,22 @@ try:
     
     with col_right:
         with st.container():
-            by_type = api.get_top_delayed_trains()
+            by_type = api.get_delay_by_train_type()
             if not by_type.empty:
-                fig = plot_train_type_bar(by_type.rename(columns={'avg_delay': 'avg_delay'}))
+                fig = plot_train_type_bar(by_type)
                 st.plotly_chart(fig, use_container_width=True)
     
     col_left2, col_right2 = st.columns(2)
+    delays = api.get_filtered_delays({}, limit=None)
     
     with col_left2:
         with st.container():
-            delays = api.get_filtered_delays({})
             if not delays.empty:
                 fig = plot_delay_category_donut(delays)
                 st.plotly_chart(fig, use_container_width=True)
     
     with col_right2:
         with st.container():
-            delays = api.get_filtered_delays({})
             if not delays.empty and 'year' in delays.columns and 'month' in delays.columns:
                 heat = delays.groupby(['year','month'])['delay_minutes'].mean().reset_index(name='avg_delay')
                 fig = plot_month_year_heatmap(heat)

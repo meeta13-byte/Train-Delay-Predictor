@@ -28,7 +28,8 @@ def get_engine(db_type: str = "sqlite"):
 
 
 def create_schema(engine) -> None:
-    """Create all tables from the SQLAlchemy models."""
+    """(Re)create all tables from the SQLAlchemy models so each pipeline run starts clean."""
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     logger.info("Database schema created")
 
@@ -65,7 +66,8 @@ def load_to_db(data: dict, engine) -> dict:
                 df["remark_id"] = range(1, len(df) + 1)
         try:
             df.to_sql(table, engine, if_exists="append", index=False)
-        except Exception:
+        except Exception as e:
+            logger.warning("Append to %s failed (%s); replacing table", table, str(e).splitlines()[0])
             df.to_sql(table, engine, if_exists="replace", index=False)
         counts[table] = int(len(df))
         logger.info("Loaded table=%s rows=%d", table, counts[table])

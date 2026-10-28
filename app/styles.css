@@ -137,6 +137,22 @@ p, li, label {
   box-shadow: 0 12px 28px rgba(251, 123, 27, 0.35) !important;
 }
 
+.stFormSubmitButton > button {
+  background: var(--accent) !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 10px 32px !important;
+}
+
+.stFormSubmitButton > button p, .stButton > button[kind="primary"] p {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.stFormSubmitButton > button:hover {
+  background: var(--accent-hover) !important;
+}
+
 /* Hero */
 .hero-section {
   display: grid;

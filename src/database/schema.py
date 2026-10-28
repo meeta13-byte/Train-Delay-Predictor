@@ -23,8 +23,8 @@ class Train(Base):
     train_no = Column(Integer, primary_key=True)
     train_name = Column(String)
     train_type = Column(String)
-    source_station_code = Column(String, foreign_key=ForeignKey("stations.station_code"))
-    destination_station_code = Column(String, foreign_key=ForeignKey("stations.station_code"))
+    source_station_code = Column(String, ForeignKey("stations.station_code"))
+    destination_station_code = Column(String, ForeignKey("stations.station_code"))
     zone = Column(String)
     distance_km = Column(Float)
 
@@ -32,11 +32,12 @@ class Train(Base):
 class TrainStop(Base):
     __tablename__ = "train_stops"
 
-    train_no = Column(Integer, primary_key=True, foreign_key=ForeignKey("trains.train_no"))
+    train_no = Column(Integer, ForeignKey("trains.train_no"), primary_key=True)
     stop_sequence = Column(Integer, primary_key=True)
-    station_code = Column(String, foreign_key=ForeignKey("stations.station_code"))
-    scheduled_arrival = Column(DateTime)
-    scheduled_departure = Column(DateTime)
+    station_code = Column(String, ForeignKey("stations.station_code"))
+    scheduled_arrival = Column(String)  # 'HH:MM'
+    scheduled_departure = Column(String)  # 'HH:MM'
+    day = Column(Integer)
     distance_from_source_km = Column(Float)
 
 
@@ -45,8 +46,8 @@ class DelayRecord(Base):
 
     record_id = Column(Integer, primary_key=True)
     date = Column(DateTime)
-    train_no = Column(Integer, foreign_key=ForeignKey("trains.train_no"))
-    station_code = Column(String, foreign_key=ForeignKey("stations.station_code"))
+    train_no = Column(Integer, ForeignKey("trains.train_no"))
+    station_code = Column(String, ForeignKey("stations.station_code"))
     scheduled_arrival = Column(DateTime)
     actual_arrival = Column(DateTime)
     delay_minutes = Column(Float)
@@ -59,7 +60,7 @@ class DelayRemark(Base):
 
     remark_id = Column(Integer, primary_key=True)
     date = Column(String)
-    train_no = Column(Integer, foreign_key=ForeignKey("trains.train_no"))
-    station_code = Column(String, foreign_key=ForeignKey("stations.station_code"), nullable=True)
+    train_no = Column(Integer, ForeignKey("trains.train_no"))
+    station_code = Column(String, ForeignKey("stations.station_code"), nullable=True)
     delay_minutes = Column(Float)
     reason = Column(String)

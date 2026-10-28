@@ -93,6 +93,7 @@ def clean_routes(df: pd.DataFrame) -> pd.DataFrame:
     out["station_code"] = normalize_station_code(out["station_code"])
     out["scheduled_arrival"] = out["scheduled_arrival"].astype(str).str.strip()
     out["scheduled_departure"] = out["scheduled_departure"].astype(str).str.strip()
+    out["day"] = pd.to_numeric(out.get("day", 1), errors="coerce").fillna(1).astype(int)
     out["distance_from_source_km"] = pd.to_numeric(out["distance_from_source_km"], errors="coerce")
     return out
 
@@ -121,17 +122,10 @@ def clean_delay_records(df: pd.DataFrame, cap_minutes: float = 3000.0) -> pd.Dat
     computed = (out["actual_arrival"] - out["scheduled_arrival"]).dt.total_seconds() / 60
     out.loc[both, "delay_minutes"] = computed[both]
 
-    train_medians = out.groupby("train_no")["delay_minutes"].median()
-    imputed = 0
-    delays = []
-    for _, row in out.iterrows():
-        v = row["delay_minutes"]
-        if pd.isna(v):
-            med = train_medians.get(row["train_no"])
-            v = float(med) if pd.notna(med) else 0.0
-            imputed += 1
-        delays.append(v)
-    out["delay_minutes"] = delays
+    missing = out["delay_minutes"].isna()
+    imputed = int(missing.sum())
+    train_medians = out.groupby("train_no")["delay_minutes"].transform("median")
+    out["delay_minutes"] = out["delay_minutes"].fillna(train_medians).fillna(0.0).astype(float)
 
     dup_cols = ["date", "train_no", "station_code", "scheduled_arrival", "actual_arrival", "delay_minutes"]
     dups = out.duplicated(subset=dup_cols, keep="first")
@@ -154,6 +148,7 @@ def clean_remarks(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["train_no"] = pd.to_numeric(out["train_no"], errors="coerce").astype("Int64")
     out["station_code"] = normalize_station_code(out["station_code"].fillna(""))
+    out["station_code"] = out["station_code"].replace({"": None, "NONE": None, "NAN": None})
     out["delay_minutes"] = pd.to_numeric(out["delay_minutes"], errors="coerce")
     out["reason"] = out["reason"].astype(str).str.strip().str.lower()
     out = out.dropna(subset=["train_no"]).copy()

@@ -1,4 +1,4 @@
-"""Thin API layer for future UI (Streamlit). All functions return DataFrames/figures."""
+"""Thin API layer for the UI (Streamlit). Functions return DataFrames, dicts or figures."""
 
 from pathlib import Path
 
@@ -39,7 +39,10 @@ def get_summary_kpis() -> dict:
     }
 
 
-def get_filtered_delays(filters: dict) -> pd.DataFrame:
+def get_filtered_delays(filters: dict, limit: int = 10000) -> pd.DataFrame:
+    """Delay records (with calendar / category features) matching `filters`; limit=None for all."""
+    from src.cleaning.cleaner import add_features
+
     engine = _get_engine()
     sql = "SELECT * FROM delay_records WHERE 1=1"
     params = {}
@@ -49,12 +52,18 @@ def get_filtered_delays(filters: dict) -> pd.DataFrame:
     if filters.get("station_code"):
         sql += " AND station_code = :station_code"
         params["station_code"] = filters["station_code"]
-    df = pd.read_sql(sql + " LIMIT 10000", engine, params=params)
-    return df
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+    df = pd.read_sql(sql, engine, params=params)
+    return add_features(df)
 
 
 def get_top_delayed_trains(n: int = 10) -> pd.DataFrame:
     return queries.top_delayed_trains(_get_engine(), n)
+
+
+def get_delay_by_train_type() -> pd.DataFrame:
+    return queries.avg_delay_by_train_type(_get_engine())
 
 
 def get_station_delays() -> pd.DataFrame:
@@ -108,3 +117,22 @@ def list_stations() -> pd.DataFrame:
 def list_zones() -> pd.DataFrame:
     engine = _get_engine()
     return pd.read_sql("SELECT DISTINCT zone FROM trains", engine)
+
+
+def plan_journey(to_code: str, travel_date, from_code: str = None, train_no: int = None,
+                 train_type: str = None, leave_after=None) -> dict:
+    """Predicted delay for a train plus ranked alternatives on the same route.
+
+    See src/planner.py. Raises planner.PlannerError for bad input.
+    """
+    from src import planner
+
+    return planner.plan_journey(
+        _get_engine(), to_code=to_code, travel_date=travel_date, from_code=from_code,
+        train_no=train_no, train_type=train_type, leave_after=leave_after,
+    )
+
+
+def list_train_stops() -> pd.DataFrame:
+    engine = _get_engine()
+    return pd.read_sql("SELECT * FROM train_stops ORDER BY train_no, stop_sequence", engine)
