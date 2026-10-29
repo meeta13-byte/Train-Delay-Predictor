@@ -12,6 +12,7 @@ import pin from '../assets/icons/pin.svg';
 import route from '../assets/icons/route.svg';
 import signal from '../assets/icons/signal.svg';
 import train from '../assets/icons/train.svg';
+import { rankOptions } from './Combobox.jsx';
 import RunPipeline from './RunPipeline.jsx';
 
 export const ICONS = { broom, chart, clock, database, empty, files, forecast, pin, route, signal, train };
@@ -202,10 +203,17 @@ export function Async({ state, children, skeleton = 2 }) {
   return children(state.data);
 }
 
-export function MultiSelect({ label, options, value, onChange, placeholder = 'All' }) {
+/**
+ * Multi-select dropdown. options: strings or { value, label }. With `searchable`, a box at the
+ * top filters the list and puts the best matches first.
+ */
+export function MultiSelect({ label, options, value, onChange, placeholder = 'All', searchable = false }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const ref = useRef(null);
   const id = useId();
+  const opts = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+  const labelOf = Object.fromEntries(opts.map((o) => [o.value, o.label]));
   useEffect(() => {
     if (!open) return undefined;
     const close = (e) => !ref.current?.contains(e.target) && setOpen(false);
@@ -217,7 +225,12 @@ export function MultiSelect({ label, options, value, onChange, placeholder = 'Al
       document.removeEventListener('keydown', esc);
     };
   }, [open]);
-  const text = value.length === 0 ? placeholder : value.length <= 2 ? value.join(', ') : `${value.length} selected`;
+  useEffect(() => {
+    if (!open) setQuery('');
+  }, [open]);
+  const shown = searchable ? rankOptions(opts, query, 200) : opts;
+  const names = value.map((v) => labelOf[v] ?? v);
+  const text = value.length === 0 ? placeholder : value.length <= 2 ? names.join(', ') : `${value.length} selected`;
   return (
     <div className="field multi" ref={ref}>
       <span id={`${id}-l`}>{label}</span>
@@ -225,20 +238,28 @@ export function MultiSelect({ label, options, value, onChange, placeholder = 'Al
         {text}
       </button>
       {open && (
-        <ul className="multi-menu" role="listbox" aria-multiselectable="true">
-          {options.map((o) => (
-            <li key={o}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={value.includes(o)}
-                  onChange={(e) => onChange(e.target.checked ? [...value, o] : value.filter((v) => v !== o))}
-                />
-                {o}
-              </label>
-            </li>
-          ))}
-        </ul>
+        <div className="multi-menu">
+          {searchable && (
+            <div className="multi-search">
+              <input className="input" autoFocus placeholder="Type to search" value={query} onChange={(e) => setQuery(e.target.value)} aria-label={`Search ${label}`} />
+            </div>
+          )}
+          <ul role="listbox" aria-multiselectable="true" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {shown.length === 0 && <li className="combo-empty">No matches</li>}
+            {shown.map((o) => (
+              <li key={o.value}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={value.includes(o.value)}
+                    onChange={(e) => onChange(e.target.checked ? [...value, o.value] : value.filter((v) => v !== o.value))}
+                  />
+                  {o.label}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

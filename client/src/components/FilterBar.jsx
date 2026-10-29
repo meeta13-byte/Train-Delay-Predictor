@@ -20,7 +20,8 @@ export default function FilterBar() {
             onChange={(e) => setFilter('end', e.target.value)} />
         </div>
       </div>
-      <MultiSelect label="Zone" options={meta?.zones ?? []} value={filters.zones} onChange={(v) => setFilter('zones', v)} placeholder="All zones" />
+      <MultiSelect label="Station" searchable placeholder="All stations" value={filters.stations} onChange={(v) => setFilter('stations', v)}
+        options={(meta?.stations ?? []).map((s) => ({ value: s.station_code, label: s.station_name, keys: [s.station_code] }))} />
       <MultiSelect label="Train type" options={meta?.train_types ?? []} value={filters.train_types} onChange={(v) => setFilter('train_types', v)} placeholder="All types" />
       <label className="field">
         <span>Season</span>

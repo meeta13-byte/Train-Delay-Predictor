@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-const STORAGE_KEY = 'railpulse.filters.v1';
-export const EMPTY_FILTERS = { start: '', end: '', zones: [], train_types: [], season: 'All' };
+const STORAGE_KEY = 'railpulse.filters.v2';
+export const EMPTY_FILTERS = { start: '', end: '', stations: [], train_types: [], season: 'All' };
 
 const FiltersContext = createContext(null);
 
@@ -46,7 +46,7 @@ export function apiFilters(f) {
   const out = {};
   if (f.start) out.start = f.start;
   if (f.end) out.end = f.end;
-  if (f.zones.length) out.zones = f.zones;
+  if (f.stations.length) out.stations = f.stations;
   if (f.train_types.length) out.train_types = f.train_types;
   if (f.season && f.season !== 'All') out.season = f.season;
   return out;

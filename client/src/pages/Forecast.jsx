@@ -7,7 +7,7 @@ import { C, fmt } from '../theme.js';
 
 const SCOPES = [
   { id: 'all', label: 'All trains' },
-  { id: 'zone', label: 'Zone' },
+  { id: 'zone', label: 'Railway zone' },
   { id: 'train_type', label: 'Train type' },
   { id: 'train', label: 'Single train' },
 ];
@@ -42,7 +42,7 @@ export default function Forecast() {
             <select className="select" value={v ?? ''} onChange={(e) => setValue(e.target.value)}>
               {kind === 'train'
                 ? options.map((t) => <option key={t.train_no} value={t.train_no}>{t.train_no} · {t.train_name}</option>)
-                : options.map((o) => <option key={o}>{o}</option>)}
+                : options.map((o) => <option key={o} value={o}>{meta?.zone_names?.[o] ? `${meta.zone_names[o]} (${o})` : o}</option>)}
             </select>
           </label>
         )}

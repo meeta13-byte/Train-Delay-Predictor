@@ -80,7 +80,7 @@ function Body({ d }) {
             rows={d.stations}
             columns={[
               { key: 'station_name', label: 'Station', render: (v, s) => <span><strong style={{ color: 'var(--text-strong)' }}>{v}</strong> <span className="muted small">{s.station_code}</span></span> },
-              { key: 'zone', label: 'Zone' },
+              { key: 'zone_name', label: 'Railway zone' },
               { key: 'avg_delay', label: 'Avg delay', render: (v) => delayChip(v) },
               { key: 'ontime_pct', label: 'On time', num: true, render: (v) => fmt.pct(v, 0) },
               { key: 'records', label: 'Records', num: true, render: (v) => fmt.int(v) },

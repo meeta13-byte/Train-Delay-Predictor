@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { api } from '../api.js';
+import Combobox from '../components/Combobox.jsx';
 import { useMeta } from '../components/FilterBar.jsx';
 import Plot from '../components/Plot.jsx';
 import { BatteryMeter, Card, DataTable, ErrorState, KpiTile, Loading, PageHead } from '../components/ui.jsx';
@@ -31,8 +32,42 @@ export default function Planner() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const trains = meta.data?.trains ?? [];
+  const stations = meta.data?.stations ?? [];
   const chosen = trains.find((t) => String(t.train_no) === form.train_no);
-  const typeMismatch = chosen && form.train_type && chosen.train_type !== form.train_type;
+  const stationName = useMemo(() => Object.fromEntries(stations.map((s) => [s.station_code, s.station_name])), [stations]);
+
+  // train box: type a number or a name; a chosen category narrows the list
+  const trainOptions = useMemo(
+    () => trains
+      .filter((t) => !form.train_type || chosen || t.train_type === form.train_type)
+      .map((t) => ({
+        value: String(t.train_no),
+        label: `${t.train_no} · ${t.train_name}`,
+        hint: `${t.train_type} · ${stationName[t.source_station_code] ?? t.source_station_code} → ${stationName[t.destination_station_code] ?? t.destination_station_code}`,
+        keys: [t.train_name],
+      })),
+    [trains, form.train_type, chosen, stationName],
+  );
+
+  // with a train picked, only its stops (in route order) make sense
+  const stationOptions = useMemo(() => {
+    const codes = chosen ? meta.data?.train_stops?.[chosen.train_no] ?? [] : stations.map((s) => s.station_code);
+    return codes.map((c) => ({ value: c, label: `${stationName[c] ?? c} (${c})`, keys: [stationName[c] ?? c], hint: chosen ? 'on this train\'s route' : undefined }));
+  }, [chosen, stations, stationName, meta.data]);
+
+  const pickTrain = (v) => {
+    const t = trains.find((x) => String(x.train_no) === v);
+    const stops = t ? meta.data?.train_stops?.[t.train_no] ?? [] : null;
+    setForm((f) => ({
+      ...f,
+      train_no: v,
+      // category comes from the train itself
+      train_type: t ? t.train_type : f.train_type,
+      // drop stations this train doesn't stop at
+      from_code: stops && !stops.includes(f.from_code) ? '' : f.from_code,
+      to_code: stops && !stops.includes(f.to_code) ? '' : f.to_code,
+    }));
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -64,44 +99,53 @@ export default function Planner() {
 
       <Card>
         <form className="planner-form" onSubmit={submit} aria-label="Plan a journey">
-          <label className="field span-3">
-            <span>Train number</span>
-            <select id="plan-train" className="select" value={form.train_no} onChange={set('train_no')}>
-              <option value="">Any train (search by category)</option>
-              {trains.map((t) => (
-                <option key={t.train_no} value={t.train_no}>
-                  {t.train_no} · {t.train_name} ({t.train_type})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field span-3">
-            <span>Train category</span>
-            <select id="plan-type" className="select" value={form.train_type} onChange={set('train_type')}>
-              <option value="">Any category</option>
-              {(meta.data?.train_types ?? []).map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </label>
-          <label className="field span-2">
-            <span>From</span>
-            <select id="plan-from" className="select" value={form.from_code} onChange={set('from_code')}>
-              <option value="">{chosen ? `Starting station (${chosen.source_station_code})` : 'Choose station'}</option>
-              {(meta.data?.stations ?? []).map((s) => (
-                <option key={s.station_code} value={s.station_code}>{s.station_name} ({s.station_code})</option>
-              ))}
-            </select>
-          </label>
-          <label className="field span-2">
-            <span>To (destination)</span>
-            <select id="plan-to" className="select" value={form.to_code} onChange={set('to_code')} required>
-              <option value="">Choose station</option>
-              {(meta.data?.stations ?? []).map((s) => (
-                <option key={s.station_code} value={s.station_code}>{s.station_name} ({s.station_code})</option>
-              ))}
-            </select>
-          </label>
+          <Combobox
+            id="plan-train"
+            className="span-3"
+            label="Train (type number or name)"
+            placeholder="e.g. 12951 or Rajdhani"
+            options={trainOptions}
+            value={form.train_no}
+            onChange={pickTrain}
+            clearLabel={form.train_no ? 'Any train (search by category)' : undefined}
+            emptyText={form.train_type ? `No ${form.train_type} train matches` : 'No train matches'}
+          />
+          {chosen ? (
+            <div className="field span-3">
+              <span>Train category <span className="field-note">· filled in from train {chosen.train_no}</span></span>
+              <input id="plan-type" className="input auto" value={chosen.train_type} readOnly aria-readonly="true" />
+            </div>
+          ) : (
+            <label className="field span-3">
+              <span>Train category</span>
+              <select id="plan-type" className="select" value={form.train_type} onChange={set('train_type')}>
+                <option value="">Any category</option>
+                {(meta.data?.train_types ?? []).map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <Combobox
+            id="plan-from"
+            className="span-2"
+            label="From"
+            placeholder={chosen ? `${stationName[chosen.source_station_code]} (start)` : 'Type a station name'}
+            options={stationOptions}
+            value={form.from_code}
+            onChange={(v) => setForm((f) => ({ ...f, from_code: v }))}
+            emptyText="No station matches"
+          />
+          <Combobox
+            id="plan-to"
+            className="span-2"
+            label="To (destination)"
+            placeholder="Type a station name"
+            options={stationOptions}
+            value={form.to_code}
+            onChange={(v) => setForm((f) => ({ ...f, to_code: v }))}
+            emptyText="No station matches"
+          />
           <label className="field">
             <span>Date of travel</span>
             <input id="plan-date" className="input" type="date" value={form.travel_date} onChange={set('travel_date')} required />
@@ -112,7 +156,6 @@ export default function Planner() {
           </label>
           <div className="span-3 row">
             <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Checking…' : 'Predict & compare'}</button>
-            {typeMismatch && <span className="small muted">Train {chosen.train_no} is a {chosen.train_type} train; the train number is used.</span>}
           </div>
         </form>
       </Card>

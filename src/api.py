@@ -155,6 +155,12 @@ SEASON_ORDER = ["Winter", "Summer", "Monsoon", "Post-Monsoon"]
 CATEGORY_ORDER = ["On-time", "Minor", "Major", "Severe"]
 TYPE_ORDER = ["Vande Bharat", "Shatabdi", "Rajdhani", "Duronto", "Superfast", "Mail/Express", "Passenger"]
 SEVERE_MINUTES = 180
+ZONE_NAMES = {
+    "CR": "Central Railway", "NR": "Northern Railway", "NCR": "North Central Railway", "WCR": "West Central Railway",
+    "SECR": "South East Central Railway", "SER": "South Eastern Railway", "ER": "Eastern Railway", "WR": "Western Railway",
+    "SR": "Southern Railway", "SCR": "South Central Railway", "NER": "North Eastern Railway", "NFR": "Northeast Frontier Railway",
+    "NWR": "North Western Railway", "ECR": "East Central Railway", "ECoR": "East Coast Railway", "SWR": "South Western Railway",
+}
 ON_TIME_MINUTES = 15
 
 _CACHE = {}
@@ -241,6 +247,8 @@ def _apply_filters(df: pd.DataFrame, filters: dict = None) -> pd.DataFrame:
         mask &= df["date"] <= pd.Timestamp(f["end"])
     if f.get("zones"):
         mask &= df["zone"].isin(f["zones"])
+    if f.get("stations"):
+        mask &= df["station_code"].isin(f["stations"])
     if f.get("train_types"):
         mask &= df["train_type"].isin(f["train_types"])
     if f.get("season") and f["season"] != "All":
@@ -275,7 +283,10 @@ def ui_meta() -> dict:
         "date_min": df["date"].min().date(),
         "date_max": df["date"].max().date(),
         "trains": trains[["train_no", "train_name", "train_type", "source_station_code", "destination_station_code"]],
-        "stations": stations[stations["station_code"].isin(served)][["station_code", "station_name"]],
+        "stations": stations[stations["station_code"].isin(served)][["station_code", "station_name", "zone"]],
+        "zone_names": ZONE_NAMES,
+        # stop codes per train in route order, so the planner can offer only valid stations
+        "train_stops": {int(t): g.sort_values("stop_sequence")["station_code"].tolist() for t, g in stops.groupby("train_no")},
     })
 
 
@@ -411,6 +422,7 @@ def ui_stations() -> dict:
     st = st.sort_values("avg_delay", ascending=False)
     st["avg_delay"] = st["avg_delay"].round(1)
     st["ontime_pct"] = st["ontime_pct"].round(1)
+    st["zone_name"] = st["zone"].map(ZONE_NAMES).fillna(st["zone"])
     stops = list_train_stops().sort_values(["train_no", "stop_sequence"])
     links = set()
     for _, g in stops.groupby("train_no"):

@@ -30,8 +30,10 @@ const OUT = path.resolve(import.meta.dirname, '..', args.out || 'outputs/ui_scre
 const PAGES = [
   ['home', '/'],
   ['plan', '/plan', async (page) => {
-    await page.selectOption('#plan-train', '12951');
-    await page.selectOption('#plan-to', 'NGP');
+    await page.fill('#plan-train', '12951');
+    await page.keyboard.press('Enter');
+    await page.fill('#plan-to', 'Nagpur');
+    await page.keyboard.press('Enter');
     await page.fill('#plan-date', '2026-12-18');
     await page.click('button[type=submit]');
     await page.waitForSelector('.trip-title', { timeout: 30000 });
