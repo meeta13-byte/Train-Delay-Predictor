@@ -29,6 +29,9 @@ This project is an academic Data Analytics & Visualization (DAV) mini-project th
 
 ## Tech Stack
 
+Design rationale, rejected alternatives and known limits: [`docs/design-decisions.md`](docs/design-decisions.md).
+
+
 **Backend / analytics:** Python 3.9+, pandas, numpy, matplotlib, seaborn, statsmodels, SQLAlchemy + SQLite,
 openpyxl, xml.etree.ElementTree, scikit-learn, PyYAML, pytest.
 
@@ -57,6 +60,8 @@ Train-Delay-Predictor/
 │   ├── visualization/      # static_charts, interactive_charts
 │   ├── timeseries/         # prepare, decomposition, smoothing, arima_model
 │   └── utils/logger.py
+├── docs/
+│   └── design-decisions.md  # why each tool was chosen, what was rejected, and the limits
 ├── server/                 # Express API (app.js, python.js bridge client, pipeline.js)
 ├── client/                 # React + Vite UI (pages/, components/, theme.js, styles.css, assets/)
 ├── tools/
